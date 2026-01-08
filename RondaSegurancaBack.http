@@ -1,0 +1,6 @@
+@RondaSegurancaBack_HostAddress = http://localhost:5211
+
+GET {{RondaSegurancaBack_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
