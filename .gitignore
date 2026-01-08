@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/apiRonda.slnx
+/.vs
+/bin
+/obj
+/Uploads/7e9305cf-c253-45c9-b1d6-d814d434d365
