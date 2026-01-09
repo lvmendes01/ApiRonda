@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using RondaSegurancaBack.Data;
 using RondaSegurancaBack.Models;
@@ -103,6 +104,23 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+// ------------------------
+// Static Files (Uploads)
+// ------------------------
+var uploadsPath = "/root/ronda/Uploads";
+
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
 app.UseCors("AllowAll"); // CORS precisa estar antes de Authentication
 app.UseAuthentication();
 app.UseAuthorization();
