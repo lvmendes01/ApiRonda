@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RondaSegurancaBack.Data;
 
@@ -11,9 +12,11 @@ using RondaSegurancaBack.Data;
 namespace RondaSegurancaBack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109185929_ajusteROnda")]
+    partial class ajusteROnda
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,8 +185,9 @@ namespace RondaSegurancaBack.Migrations
                     b.Property<double?>("PrecisaoMetros")
                         .HasColumnType("double");
 
-                    b.Property<long>("RondaId")
-                        .HasColumnType("bigint");
+                    b.Property<string>("RondaId")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()
@@ -217,9 +221,6 @@ namespace RondaSegurancaBack.Migrations
 
                     b.Property<double?>("Longitude")
                         .HasColumnType("double");
-
-                    b.Property<int?>("RondaId")
-                        .HasColumnType("int");
 
                     b.Property<string>("UsuarioId")
                         .IsRequired()
@@ -257,15 +258,11 @@ namespace RondaSegurancaBack.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<string>("UsuarioCriacaoId")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("UsuarioResponsavelId")
+                    b.Property<string>("UsuarioId")
                         .IsRequired()
                         .HasColumnType("longtext");
 

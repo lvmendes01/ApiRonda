@@ -48,7 +48,9 @@ public class OcorrenciaController : ControllerBase
             Descricao = request.Descricao,
             ImagemPath = $"Uploads/{usuarioId}/{uniqueFileName}",
             Latitude = request.Latitude,
-            Longitude = request.Longitude
+            Longitude = request.Longitude,
+            RondaId = request.RondaId
+
         };
 
         _context.Ocorrencias.Add(ocorrencia);
@@ -94,5 +96,29 @@ public class OcorrenciaController : ControllerBase
         };
 
         return Ok(detalhe);
+    }
+
+
+    [HttpGet("ListaOcorrenciaPorRonda")]
+    public async Task<IActionResult> ListaOcorrenciaPorRonda(int idRonda)
+    {
+        var ocorrencias = await _context.Ocorrencias
+            .Where(o => o.RondaId == idRonda)
+            .ToListAsync();
+
+        if (ocorrencias.Count == 0)
+            return NotFound("Nenhuma ocorrência encontrada para esta ronda");
+
+        var detalhes = ocorrencias.Select(o => new
+        {
+            o.Id,
+            o.Descricao,
+            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{Path.GetFileName(o.ImagemPath)}",
+            o.Latitude,
+            o.Longitude,
+            o.DataHora
+        });
+
+        return Ok(detalhes);
     }
 }

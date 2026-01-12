@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RondaSegurancaBack.Data;
 
@@ -11,9 +12,11 @@ using RondaSegurancaBack.Data;
 namespace RondaSegurancaBack.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260109164654_CreateAparelhoLocalizacao")]
+    partial class CreateAparelhoLocalizacao
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,9 +185,6 @@ namespace RondaSegurancaBack.Migrations
                     b.Property<double?>("PrecisaoMetros")
                         .HasColumnType("double");
 
-                    b.Property<long>("RondaId")
-                        .HasColumnType("bigint");
-
                     b.Property<string>("UsuarioId")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -227,6 +227,8 @@ namespace RondaSegurancaBack.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("RondaId");
+
                     b.ToTable("Ocorrencias");
                 });
 
@@ -238,38 +240,20 @@ namespace RondaSegurancaBack.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("DataHoraCriacao")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("DataHoraFimPlanejada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("DataHoraFimRealizada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("DataHoraInicioPlanejada")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("DataHoraInicioRealizada")
+                    b.Property<DateTime>("DataHora")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Local")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("Nome")
+                    b.Property<string>("UsuarioId")
                         .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UsuarioCriacaoId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("UsuarioResponsavelId")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
 
                     b.ToTable("Rondas");
                 });
@@ -391,6 +375,29 @@ namespace RondaSegurancaBack.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("RondaSegurancaBack.Models.Ocorrencia", b =>
+                {
+                    b.HasOne("RondaSegurancaBack.Models.Ronda", null)
+                        .WithMany("Ocorrencias")
+                        .HasForeignKey("RondaId");
+                });
+
+            modelBuilder.Entity("RondaSegurancaBack.Models.Ronda", b =>
+                {
+                    b.HasOne("RondaSegurancaBack.Models.Usuario", "Usuario")
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("RondaSegurancaBack.Models.Ronda", b =>
+                {
+                    b.Navigation("Ocorrencias");
                 });
 #pragma warning restore 612, 618
         }

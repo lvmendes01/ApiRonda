@@ -6,6 +6,7 @@ namespace RondaSegurancaBack.Models
     {
         [Key]
         public int Id { get; set; }
+        public int? RondaId { get; set; }
         public string Descricao { get; set; } = string.Empty;
         public string? ImagemPath { get; set; }
         public double? Latitude { get; set; }

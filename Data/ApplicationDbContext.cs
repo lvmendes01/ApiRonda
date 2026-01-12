@@ -11,5 +11,6 @@ namespace RondaSegurancaBack.Data
 
         public DbSet<Ronda> Rondas => Set<Ronda>();
         public DbSet<Ocorrencia> Ocorrencias => Set<Ocorrencia>();
+        public DbSet<AparelhoLocalizacao> AparelhoLocalizacoes => Set<AparelhoLocalizacao>();
     }
 }
