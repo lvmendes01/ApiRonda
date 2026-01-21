@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using RondaSegurancaBack.Data;
 using RondaSegurancaBack.DTO;
 using RondaSegurancaBack.Models;
@@ -12,12 +13,14 @@ using System.Security.Claims;
 public class OcorrenciaController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-
-    public OcorrenciaController(ApplicationDbContext context)
+private readonly IConfiguration _configuration;
+    public OcorrenciaController(ApplicationDbContext context,  IConfiguration configuration)
     {
         _context = context;
+    _configuration = configuration;
     }
 
+    // POST: api/Ocorrencia/UploadImagemComGps
     [HttpPost("UploadImagemComGps")]
     public async Task<IActionResult> UploadImagemComGps([FromForm] UploadOcorrenciaDto request)
     {
@@ -27,39 +30,49 @@ public class OcorrenciaController : ControllerBase
         if (request.Imagem == null || request.Imagem.Length == 0)
             return BadRequest("Imagem não enviada");
 
-        // Pasta do usuário
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", usuarioId);
+        // Pasta geral de uploads
+        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+
         if (!Directory.Exists(uploadsFolder))
             Directory.CreateDirectory(uploadsFolder);
 
+        // Nome único do arquivo
         var uniqueFileName = $"{Guid.NewGuid()}_{request.Imagem.FileName}";
         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
+        // Salvar arquivo
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await request.Imagem.CopyToAsync(stream);
         }
 
-        // Cria a ocorrência já com imagem e GPS
+        // Criar ocorrência
         var ocorrencia = new Ocorrencia
         {
             DataHora = DateTime.UtcNow,
             UsuarioId = usuarioId,
             Descricao = request.Descricao,
-            ImagemPath = $"Uploads/{usuarioId}/{uniqueFileName}",
+            ImagemPath = uniqueFileName, // salvar apenas o nome do arquivo
             Latitude = request.Latitude,
             Longitude = request.Longitude,
             RondaId = request.RondaId
-
         };
 
         _context.Ocorrencias.Add(ocorrencia);
         await _context.SaveChangesAsync();
 
-        return Ok(ocorrencia);
+        return Ok(new
+        {
+            ocorrencia.Id,
+            ocorrencia.Descricao,
+            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{ocorrencia.ImagemPath}",
+            ocorrencia.Latitude,
+            ocorrencia.Longitude,
+            ocorrencia.DataHora
+        });
     }
 
-
+    // GET: api/Ocorrencia/MinhasOcorrencias
     [HttpGet("MinhasOcorrencias")]
     public async Task<IActionResult> MinhasOcorrencias()
     {
@@ -71,9 +84,20 @@ public class OcorrenciaController : ControllerBase
             .OrderByDescending(o => o.DataHora)
             .ToListAsync();
 
-        return Ok(ocorrencias);
+        var resultados = ocorrencias.Select(o => new
+        {
+            o.Id,
+            o.Descricao,
+            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{o.ImagemPath}",
+            o.Latitude,
+            o.Longitude,
+            o.DataHora
+        });
+
+        return Ok(resultados);
     }
 
+    // GET: api/Ocorrencia/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> DetalheOcorrencia(int id)
     {
@@ -85,35 +109,34 @@ public class OcorrenciaController : ControllerBase
 
         if (ocorrencia == null) return NotFound("Ocorrência não encontrada");
 
-        var detalhe = new
+        return Ok(new
         {
             ocorrencia.Id,
             ocorrencia.Descricao,
-            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{usuarioId}/{Path.GetFileName(ocorrencia.ImagemPath)}",
+            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{ocorrencia.ImagemPath}",
             ocorrencia.Latitude,
             ocorrencia.Longitude,
             ocorrencia.DataHora
-        };
-
-        return Ok(detalhe);
+        });
     }
 
-
+    // GET: api/Ocorrencia/ListaOcorrenciaPorRonda?idRonda=1
     [HttpGet("ListaOcorrenciaPorRonda")]
     public async Task<IActionResult> ListaOcorrenciaPorRonda(int idRonda)
     {
         var ocorrencias = await _context.Ocorrencias
             .Where(o => o.RondaId == idRonda)
+            .OrderBy(o => o.DataHora)
             .ToListAsync();
 
-        if (ocorrencias.Count == 0)
+        if (!ocorrencias.Any())
             return NotFound("Nenhuma ocorrência encontrada para esta ronda");
 
         var detalhes = ocorrencias.Select(o => new
         {
             o.Id,
             o.Descricao,
-            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{Path.GetFileName(o.ImagemPath)}",
+            ImagemUrl = $"{Request.Scheme}://{Request.Host}/uploads/{o.ImagemPath}",
             o.Latitude,
             o.Longitude,
             o.DataHora
@@ -121,4 +144,49 @@ public class OcorrenciaController : ControllerBase
 
         return Ok(detalhes);
     }
+[HttpGet("Publica/Lista")]
+[AllowAnonymous] // permite acesso sem autenticação
+public async Task<IActionResult> ListaOcorrenciasPublica()
+{
+    var ocorrencias = await _context.Ocorrencias
+        .OrderByDescending(o => o.DataHora)
+        .ToListAsync();
+
+    if (!ocorrencias.Any())
+        return NotFound("Nenhuma ocorrência encontrada");
+
+    var baseUrl = _configuration["AppSettings:BaseUrl"];
+
+    var resultados = ocorrencias.Select(o => new
+    {
+        o.Id,
+        o.Descricao,
+        ImagemUrl = $"{baseUrl}/uploads/{o.ImagemPath}",
+        o.Latitude,
+        o.Longitude,
+        o.DataHora
+    });
+
+    return Ok(resultados);
+}
+    [HttpGet("ImagemCompleta/{id}")]
+    [AllowAnonymous] 
+public async Task<IActionResult> ObterImagemCompleta(int id)
+{
+    var ocorrencia = await _context.Ocorrencias.FirstOrDefaultAsync(o => o.Id == id);
+    if (ocorrencia == null) return NotFound("Ocorrência não encontrada");
+
+    var baseUrl = _configuration["AppSettings:BaseUrl"];
+    var urlCompleta = $"{baseUrl}/uploads/{ocorrencia.ImagemPath}";
+
+    return Ok(new
+    {
+        ocorrencia.Id,
+        ocorrencia.Descricao,
+        ImagemUrl = urlCompleta,
+        ocorrencia.Latitude,
+        ocorrencia.Longitude,
+        ocorrencia.DataHora
+    });
+}
 }

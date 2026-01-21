@@ -108,7 +108,7 @@ app.UseHttpsRedirection();
 // ------------------------
 // Static Files (Uploads)
 // ------------------------
-var uploadsPath = "/root/ronda/Uploads";
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
 
 if (!Directory.Exists(uploadsPath))
 {
